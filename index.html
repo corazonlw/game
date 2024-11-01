@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة مطابقة العواصم</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            direction: rtl;
+            text-align: center;
+            background-color: #f5e6da;
+            color: #4d2e1c;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        h1 {
+            font-size: 2em;
+            color: #4d2e1c;
+        }
+        .input-section, .game-section {
+            margin: 20px 0;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+        .card {
+            background-color: #d8bda3;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card.matched {
+            background-color: #4d2e1c;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        #timer {
+            font-size: 1.2em;
+            margin-top: 10px;
+            color: #4d2e1c;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>لعبة مطابقة العواصم</h1>
+        
+        <div class="input-section">
+            <label for="studentName">ادخل اسمك:</label>
+            <input type="text" id="studentName">
+            <button onclick="startGame()">ابدأ اللعبة</button>
+        </div>
+
+        <div class="game-section" style="display:none;">
+            <h2 id="welcomeMessage"></h2>
+            <div id="timer">الوقت المتبقي: <span id="timeLeft">120</span> ثانية</div>
+            <div class="cards" id="cardContainer"></div>
+            <h3>الدرجة: <span id="score">0</span></h3>
+        </div>
+    </div>
+
+    <script>
+        const countriesCapitals = [
+            { country: "السعودية", capital: "الرياض" },
+            { country: "عُمان", capital: "مسقط" },
+            { country: "الإمارات", capital: "أبو ظبي" },
+            { country: "قطر", capital: "الدوحة" },
+            { country: "الكويت", capital: "الكويت" },
+            { country: "البحرين", capital: "المنامة" }
+        ];
+        
+        let selectedCards = [];
+        let matchedPairs = 0;
+        let score = 0;
+        let timerInterval;
+
+        function startGame() {
+            const name = document.getElementById("studentName").value;
+            if (name.trim() === "") {
+                alert("يرجى إدخال الاسم لبدء اللعبة.");
+                return;
+            }
+            document.querySelector(".input-section").style.display = "none";
+            document.querySelector(".game-section").style.display = "block";
+            document.getElementById("welcomeMessage").innerText = `مرحباً، ${name}!`;
+
+            createCards();
+            startTimer();
+        }
+
+        function createCards() {
+            const cardContainer = document.getElementById("cardContainer");
+            cardContainer.innerHTML = "";
+            
+            const cards = [];
+            countriesCapitals.forEach(pair => {
+                cards.push({ text: pair.country, type: "country" });
+                cards.push({ text: pair.capital, type: "capital" });
+            });
+            
+            cards.sort(() => Math.random() - 0.5);
+
+            cards.forEach((cardData, index) => {
+                const card = document.createElement("div");
+                card.classList.add("card");
+                card.innerText = cardData.text;
+                card.dataset.type = cardData.type;
+                card.dataset.text = cardData.text;
+                card.onclick = () => selectCard(card, cardData);
+                cardContainer.appendChild(card);
+            });
+        }
+
+        function selectCard(card, cardData) {
+            if (card.classList.contains("matched") || selectedCards.length === 2) return;
+            
+            card.style.backgroundColor = "#4d2e1c";
+            card.style.color = "#ffffff";
+            selectedCards.push({ card, cardData });
+
+            if (selectedCards.length === 2) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [first, second] = selectedCards;
+
+            if (
+                (first.cardData.type === "country" && countriesCapitals.find(pair => pair.country === first.cardData.text && pair.capital === second.cardData.text)) ||
+                (first.cardData.type === "capital" && countriesCapitals.find(pair => pair.capital === first.cardData.text && pair.country === second.cardData.text))
+            ) {
+                first.card.classList.add("matched");
+                first.card.innerHTML = "✔️";
+                second.card.classList.add("matched");
+                second.card.innerHTML = "✔️";
+                
+                matchedPairs++;
+                score += 10;
+                document.getElementById("score").innerText = score;
+                
+                if (matchedPairs === countriesCapitals.length) {
+                    endGame("أحسنت لقد أتممت المهمة!");
+                }
+            } else {
+                setTimeout(() => {
+                    first.card.style.backgroundColor = "#d8bda3";
+                    first.card.style.color = "#4d2e1c";
+                    second.card.style.backgroundColor = "#d8bda3";
+                    second.card.style.color = "#4d2e1c";
+                }, 700);
+            }
+
+            selectedCards = [];
+        }
+
+        function startTimer() {
+            let timeLeft = 120;
+            document.getElementById("timeLeft").innerText = timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById("timeLeft").innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame("انتهى الوقت! حاول مرة أخرى.");
+                }
+            }, 1000);
+        }
+
+        function endGame(message) {
+            clearInterval(timerInterval);
+            alert(message);
+        }
+    </script>
+
+</body>
+</html>
